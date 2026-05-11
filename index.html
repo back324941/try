@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搭伙晚餐 Hearth Table</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1a1410; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .gold-gradient { background: linear-gradient(135deg, #d4a574 0%, #a67c52 100%); }
+        .day-tab.active { border-color: #a67c52; background-color: rgba(166, 124, 82, 0.1); color: #a67c52; }
+        #cart-modal.hidden { display: none; }
+        /* 優化輸入框在大字體下的呈現 */
+        input, select { -webkit-appearance: none; font-size: 16px !important; } 
+    </style>
+</head>
+<body class="min-h-screen py-6 px-4 pb-24 text-gray-800">
+
+    <div class="max-w-xl mx-auto">
+        <div id="form-container" class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
+            
+            <div class="gold-gradient p-8 text-white text-center relative">
+                <h1 class="text-3xl font-black tracking-[0.2em]">搭伙晚餐</h1>
+                <p class="mt-2 opacity-90 text-xs italic tracking-[0.3em] text-orange-100 uppercase">Hearth Table Studio</p>
+                <button type="button" onclick="toggleCart()" class="absolute right-5 top-1/2 -translate-y-1/2 bg-white/20 p-4 rounded-2xl hover:bg-white/40 transition">
+                    <span class="text-2xl">🛒</span>
+                    <span id="cart-count" class="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 absolute -top-1 -right-1 font-black">0</span>
+                </button>
+            </div>
+
+            <form id="orderForm" class="p-6 space-y-8">
+                
+                <div class="bg-gray-50 p-6 rounded-[2rem] space-y-5 border border-gray-100">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2 h-5 bg-[#a67c52] rounded-full"></span>
+                        <h3 class="text-base font-black text-gray-700">基本取餐資訊</h3>
+                    </div>
+                    
+                    <input type="text" id="userName" required class="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white outline-none focus:border-[#a67c52] text-lg font-medium" placeholder="訂購人姓名 (Line 名稱)">
+                    
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-gray-400 ml-1 uppercase tracking-widest">Pickup Time 取餐時段</label>
+                            <select id="pickupTime" class="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white outline-none text-lg font-black text-gray-600">
+                                <option value="17:00-18:00">17:00-18:00</option>
+                                <option value="17:30-18:30">17:30-18:30</option>
+                                <option value="18:30-19:00">18:30-19:00</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-gray-400 ml-1 uppercase tracking-widest">Payment 付款方式</label>
+                            <select id="paymentMethod" class="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white outline-none text-lg font-black text-gray-600">
+                                <option value="現金付款">現金付款</option>
+                                <option value="銀行轉帳">銀行轉帳</option>
+                                <option value="Line Pay">Line Pay</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-gray-400 ml-1 uppercase tracking-widest">Delivery 配送方式</label>
+                        <select id="deliveryType" onchange="toggleAddress(this.value)" class="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white outline-none text-lg font-black text-gray-600">
+                            <option value="自取">文山工作室自取 (免運)</option>
+                            <option value="外送">工作室外送 (+$50/日)</option>
+                        </select>
+                    </div>
+                    <input type="text" id="userAddress" class="hidden w-full px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white outline-none text-base font-medium" placeholder="請填寫完整外送地址">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="flex border-2 border-gray-100 rounded-2xl overflow-hidden bg-white flex-1">
+                        <button type="button" onclick="switchDay('Tue')" id="tab-Tue" class="day-tab active flex-1 py-4 text-lg font-black transition-all">週二</button>
+                        <button type="button" onclick="switchDay('Wed')" id="tab-Wed" class="day-tab flex-1 py-4 text-lg font-black transition-all">週三</button>
+                        <button type="button" onclick="switchDay('Thu')" id="tab-Thu" class="day-tab flex-1 py-4 text-lg font-black transition-all">週四</button>
+                        <button type="button" onclick="switchDay('Fri')" id="tab-Fri" class="day-tab flex-1 py-4 text-lg font-black transition-all">週五</button>
+                    </div>
+                    <button type="button" onclick="clearDay()" class="px-5 py-4 text-sm bg-gray-100 text-gray-400 rounded-2xl font-black hover:bg-red-50 hover:text-red-500 transition-colors">清空</button>
+                </div>
+
+                <div id="menu-sections" class="space-y-10">
+                    <div id="package-box" class="bg-orange-50/40 rounded-[2.5rem] p-6 border border-orange-100 space-y-6">
+                        <div>
+                            <h3 class="text-xs font-black text-[#a67c52] mb-4 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-[#a67c52] rounded-full"></span> 選擇套餐主食
+                            </h3>
+                            <div id="main-list" class="space-y-3"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-black text-[#a67c52] mb-4 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-[#a67c52] rounded-full"></span> 搭配套餐副菜
+                            </h3>
+                            <div id="side-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="cursor-pointer"><input type="radio" name="orderSize" value="M" onchange="updateMode('M')" class="peer sr-only"><div class="py-4 text-center border-2 rounded-2xl font-black text-gray-400 peer-checked:border-[#a67c52] peer-checked:bg-white peer-checked:text-[#a67c52] text-lg shadow-sm">大 M</div></label>
+                        <label class="cursor-pointer"><input type="radio" name="orderSize" value="S" onchange="updateMode('S')" class="peer sr-only"><div class="py-4 text-center border-2 rounded-2xl font-black text-gray-400 peer-checked:border-[#a67c52] peer-checked:bg-white peer-checked:text-[#a67c52] text-lg shadow-sm">小 S</div></label>
+                        <label class="cursor-pointer"><input type="radio" name="orderSize" value="ONLY_ADD" onchange="updateMode('ONLY_ADD')" class="peer sr-only"><div class="py-4 text-center border-2 rounded-2xl font-black text-gray-400 peer-checked:border-orange-400 peer-checked:bg-white peer-checked:text-orange-600 text-base shadow-sm">純加點+50</div></label>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="flex items-center gap-3">
+                            <span class="h-px bg-gray-200 flex-1"></span>
+                            <span class="text-xs font-black text-gray-300 tracking-[0.3em] uppercase">自由加菜區</span>
+                            <span class="h-px bg-gray-200 flex-1"></span>
+                        </div>
+                        <div id="addon-list" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t-2 border-gray-100">
+                    <div class="flex justify-between items-center mb-6 bg-gray-50 p-6 rounded-[2.5rem] border-2 border-gray-100">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-black text-[#a67c52] uppercase tracking-widest">Total Amount</span>
+                            <span class="text-base text-gray-400 font-bold">預計支付總額</span>
+                        </div>
+                        <span class="text-5xl font-black text-[#a67c52] tracking-tighter">NT$<span id="display-total">0</span></span>
+                    </div>
+                    <button type="submit" class="gold-gradient w-full py-6 rounded-3xl text-white font-black text-2xl shadow-xl active:scale-95 transition-all tracking-[0.2em]">
+                        確認預訂明細
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="cart-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-t-[3rem] sm:rounded-[3rem] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+            <div class="p-8 border-b flex justify-between items-center bg-gray-50/50">
+                <h2 class="font-black text-gray-800 text-2xl tracking-tighter">我的訂購籃</h2>
+                <button onclick="toggleCart()" class="w-12 h-12 flex items-center justify-center bg-gray-100 text-gray-400 rounded-full text-3xl font-light">×</button>
+            </div>
+            <div id="cart-items" class="p-8 overflow-y-auto flex-1 space-y-8 text-lg font-medium text-gray-600"></div>
+            <div class="p-8 border-t bg-gray-50">
+                <button onclick="toggleCart()" class="w-full py-5 bg-gray-900 text-white rounded-[2rem] font-black text-lg tracking-widest shadow-lg">繼續選餐</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JS 邏輯與之前完全相同，僅在渲染時使用了新的放大類名
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        const menus = {
+            Tue: { main: [{n:"果香翅小腿",m:180,s:100},{n:"薑煸小卷",m:250,s:150},{n:"蔥爆豬肉片",m:180,s:100}], side: [{n:"糯米椒炒豆乾",m:100,s:60},{n:"馬鈴薯炒肉絲",m:110,s:70},{n:"番茄炒蛋",m:100,s:60}], soup: {n:"味噌牡蠣湯", p:100}, baseM: 320, baseS: 200 },
+            Wed: { main: [{n:"香菇肉燥",m:180,s:100},{n:"檸檬魚",m:230,s:130}], side: [{n:"蔬菜烘蛋",m:120,s:60}], soup: {n:"海帶芽貢丸湯", p:100}, baseM: 320, baseS: 200 },
+            Thu: { main: [{n:"南瓜滷肉",m:220,s:130}], side: [{n:"蟹黃豆腐煲",m:120,s:70}], soup: {n:"香菇雞湯", p:120}, baseM: 320, baseS: 200 },
+            Fri: { main: [{n:"白醬嫩雞",m:200,s:120}], side: [{n:"金針菇炒豆包",m:100,s:60}], soup: {n:"香根牛肉湯", p:120}, baseM: 320, baseS: 200 }
+        };
+
+        let selections = { Tue: initDay(), Wed: initDay(), Thu: initDay(), Fri: initDay() };
+        let currentDay = 'Tue';
+        function initDay() { return { mIdx:null, sIdx:null, size:null, extra:{} }; }
+        function toggleAddress(val) { document.getElementById('userAddress').classList.toggle('hidden', val==='自取'); updateTotal(); updateCartUI(); }
+        function switchDay(day) { currentDay = day; document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active')); document.getElementById(`tab-${day}`).classList.add('active'); renderMenu(); }
+        function clearDay() { selections[currentDay] = initDay(); renderMenu(); }
+        function updateMode(sz) { selections[currentDay].size = sz; if(sz === 'ONLY_ADD') { selections[currentDay].mIdx = null; selections[currentDay].sIdx = null; } renderMenu(); }
+
+        function renderMenu() {
+            const data = menus[currentDay];
+            const sel = selections[currentDay];
+            const isOnlyAdd = sel.size === 'ONLY_ADD';
+            const pkgBox = document.getElementById('package-box');
+            pkgBox.style.opacity = isOnlyAdd ? "0.3" : "1";
+            pkgBox.style.pointerEvents = isOnlyAdd ? "none" : "auto";
+
+            // 主食 (文字放大到 text-lg)
+            document.getElementById('main-list').innerHTML = data.main.map((m, i) => `
+                <label class="block cursor-pointer"><input type="radio" name="mC" ${sel.mIdx===i?'checked':''} onchange="selM(${i})" class="peer sr-only"><div class="p-5 bg-white border-2 border-gray-50 rounded-2xl font-black text-gray-500 peer-checked:border-[#a67c52] peer-checked:text-[#a67c52] flex justify-between items-center text-lg shadow-sm"><span>[${alphabet[i]}] ${m.n}</span><span class="text-xs font-bold opacity-40">+$${m.m}/$${m.s}</span></div></label>
+            `).join('');
+
+            // 副菜 (文字放大到 text-lg)
+            document.getElementById('side-list').innerHTML = data.side.map((s, i) => `
+                <label class="block cursor-pointer"><input type="radio" name="sC" ${sel.sIdx===i?'checked':''} onchange="selS(${i})" class="peer sr-only"><div class="p-5 bg-white border-2 border-gray-50 rounded-2xl font-black text-gray-500 peer-checked:border-[#a67c52] peer-checked:text-[#a67c52] text-lg shadow-sm">[${alphabet[i+5]}] ${s.n}</div></label>
+            `).join('');
+
+            document.querySelectorAll('input[name="orderSize"]').forEach(r => r.checked = (r.value === sel.size));
+
+            let addonHtml = '';
+            data.main.forEach((m, i) => addonHtml += renderAddonItem(`m-${i}`, `[${alphabet[i]}] ${m.n}`, m.m, m.s));
+            data.side.forEach((s, i) => addonHtml += renderAddonItem(`s-${i}`, `[${alphabet[i+5]}] ${s.n}`, s.m, s.s));
+            addonHtml += renderAddonItem(`soup`, `[S] ${data.soup.n}`, data.soup.p, null);
+            document.getElementById('addon-list').innerHTML = addonHtml;
+            
+            updateTotal();
+            updateCartUI();
+        }
+
+        function renderAddonItem(id, name, pM, pS) {
+            const qM = selections[currentDay].extra[id+'-M'] || 0;
+            const qS = selections[currentDay].extra[id+'-S'] || 0;
+            let h = `<div class="p-5 bg-white border-2 border-gray-50 rounded-3xl space-y-4 shadow-sm"><div class="text-base font-black text-gray-600">${name}</div><div class="flex gap-3">`;
+            h += `<div class="flex-1 flex justify-between items-center bg-gray-50 p-3 rounded-xl border-2 border-gray-100"> <span class="text-xs font-black text-gray-400">M $${pM}</span> <div class="flex items-center"><button type="button" onclick="chEx('${id}-M',-1)" class="w-8 h-8 text-2xl text-[#a67c52] font-black">－</button><span class="w-8 text-center text-lg font-black text-gray-700">${qM}</span><button type="button" onclick="chEx('${id}-M',1)" class="w-8 h-8 text-2xl text-[#a67c52] font-black">＋</button></div></div>`;
+            if(pS) h += `<div class="flex-1 flex justify-between items-center bg-gray-50 p-3 rounded-xl border-2 border-gray-100"> <span class="text-xs font-black text-gray-400">S $${pS}</span> <div class="flex items-center"><button type="button" onclick="chEx('${id}-S',-1)" class="w-8 h-8 text-2xl text-[#a67c52] font-black">－</button><span class="w-8 text-center text-lg font-black text-gray-700">${qS}</span><button type="button" onclick="chEx('${id}-S',1)" class="w-8 h-8 text-2xl text-[#a67c52] font-black">＋</button></div></div>`;
+            return h + `</div></div>`;
+        }
+
+        function selM(i) { selections[currentDay].mIdx = i; updateTotal(); updateCartUI(); }
+        function selS(i) { selections[currentDay].sIdx = i; updateTotal(); updateCartUI(); }
+        function chEx(id, amt) { let q = (selections[currentDay].extra[id] || 0) + amt; selections[currentDay].extra[id] = Math.max(0, q); renderMenu(); }
+        function toggleCart() { document.getElementById('cart-modal').classList.toggle('hidden'); }
+
+        function updateCartUI() {
+            let totalQty = 0; let html = "";
+            const dayNames = {Tue:"週二", Wed:"週三", Thu:"週四", Fri:"週五"};
+
+            html += `<div class="bg-gray-100/50 p-6 rounded-3xl mb-6 space-y-2">
+                <div class="text-xs text-gray-400 font-black uppercase tracking-widest">Order Info</div>
+                <div class="text-xl font-black text-gray-700">🕙 ${document.getElementById('pickupTime').value}</div>
+                <div class="text-xl font-black text-gray-700">💰 ${document.getElementById('paymentMethod').value}</div>
+                <div class="text-xl font-black text-gray-700">📍 ${document.getElementById('deliveryType').value}</div>
+            </div>`;
+
+            for (let d in selections) {
+                const s = selections[d];
+                if (!s.size) continue;
+                let dayHtml = `<div class="border-l-8 border-[#a67c52] pl-6 py-2 mb-8"><h4 class="font-black text-[#a67c52] text-xl mb-3">${dayNames[d]}</h4>`;
+                let hasItem = false;
+                if (s.size === 'ONLY_ADD') { dayHtml += `<div class="text-orange-600 font-black text-lg">• 純加點模式 ($50)</div>`; hasItem = true; }
+                else if (s.mIdx !== null) { dayHtml += `<div class="font-black text-gray-800 text-lg">• 套餐(${s.size}): ${menus[d].main[s.mIdx].n}</div>`; totalQty++; hasItem = true; }
+                for (let k in s.extra) {
+                    if (s.extra[k] > 0) {
+                        const p = k.split('-');
+                        let n = (p[0]==='m') ? menus[d].main[p[1]].n : (p[0]==='s' ? menus[d].side[p[1]].n : menus[d].soup.n);
+                        dayHtml += `<div class="text-gray-400 text-base font-bold mt-2">• 加點: ${n} (${p[2]||'湯'}) x${s.extra[k]}</div>`;
+                        totalQty += s.extra[k]; hasItem = true;
+                    }
+                }
+                if (hasItem) html += dayHtml + "</div>";
+            }
+            document.getElementById('cart-items').innerHTML = html || "<div class='text-center text-gray-300 py-12 font-black uppercase tracking-widest'>Basket is Empty</div>";
+            document.getElementById('cart-count').innerText = totalQty;
+        }
+
+        function updateTotal() {
+            let total = 0; let days = 0;
+            for (let d in selections) {
+                const s = selections[d];
+                if (s.size === 'ONLY_ADD') { days++; total += 50; }
+                else if ((s.size === 'M' || s.size === 'S') && s.mIdx !== null) {
+                    days++;
+                    total += (s.size === 'M' ? menus[d].baseM + menus[d].main[s.mIdx].m : menus[d].baseS + menus[d].main[s.mIdx].s);
+                }
+                for (let k in s.extra) {
+                    const q = s.extra[k], p = k.split('-'); if(q <= 0) continue;
+                    if(p[0]==='soup') total += q * menus[d].soup.p;
+                    else if(p[0]==='m') total += q * (p[2]==='M'?menus[d].main[p[1]].m:menus[d].main[p[1]].s);
+                    else if(p[0]==='s') total += q * (p[2]==='M'?menus[d].side[p[1]].m:menus[d].side[p[1]].s);
+                }
+            }
+            if (document.getElementById('deliveryType').value === '外送') total += (days * 50);
+            document.getElementById('display-total').innerText = total.toLocaleString();
+        }
+
+        switchDay('Tue');
+    </script>
+</body>
+</html>
